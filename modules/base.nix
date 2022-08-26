@@ -2,7 +2,7 @@
 with lib;
 let
   cfg = config.oceanix;
-  plistFile = oc.plist.toPlist { } cfg.opencore.settings;
+  plistFile = oc.plist.toPlist { } cfg.opencore.transposedSettings;
 in {
   options.oceanix = {
     efiPackage = mkOption {
@@ -30,6 +30,12 @@ in {
         description = "The OpenCore package to use";
       };
 
+      transposedSettings = mkOption {
+        internal = true;
+        type = types.attrsOf types.anything;
+        description = "Transposed final OpenCore config";
+      };
+
       settings = mkOption {
         type = types.attrsOf types.anything;
         description = "The OpenCore config written in Nix";
@@ -45,12 +51,17 @@ in {
   };
 
   config = {
-    oceanix.opencore.settings.ACPI.Add =
-      lib.mkDefault (lib.oc.resolver.mkACPI cfg.efiIntermediatePackage);
-    oceanix.opencore.settings.UEFI.Drivers =
-      lib.mkDefault (lib.oc.resolver.mkDrivers cfg.efiIntermediatePackage);
-    oceanix.opencore.settings.Kernel.Add =
-      lib.mkDefault (lib.oc.resolver.mkKexts cfg.efiIntermediatePackage);
+    oceanix.opencore.settings = with oc.resolver; {
+      ACPI.Add = mkDefaultRecursive (mkACPI cfg.efiIntermediatePackage);
+      UEFI.Drivers = mkDefaultRecursive (mkDrivers cfg.efiIntermediatePackage);
+      Kernel.Add = mkDefaultRecursive (mkKexts cfg.efiIntermediatePackage);
+    };
+
+    oceanix.opencore.transposedSettings = with oc.resolver; {
+      Kernel.Add = transpose cfg.opencore.settings.Kernel.Add;
+      UEFI.Drivers = transpose cfg.opencore.settings.UEFI.Drivers;
+      ACPI.Add = transpose cfg.opencore.settings.ACPI.Add;
+    };
 
     oceanix.efiIntermediatePackage =
       pkgs.runCommand "buildEfiIntermediate" { } ''

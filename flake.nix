@@ -32,7 +32,7 @@
           modules = [
             ({ lib, pkgs, ... }: {
               oceanix.opencore = {
-                settings = { ACPI = { foo = lib.oc.plist.mkData "1"; }; };
+                settings = { Kernel.Add."Lilu.kext".Enabled = true; };
                 resources = [
                   pkgs.whatevergreen-latest-release
                   pkgs.lilu-latest-release

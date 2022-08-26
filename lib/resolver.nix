@@ -1,6 +1,14 @@
+# This file contains functions used to generate related OpenCore settings based on installed resources.
 { lib }:
 with lib;
 with builtins; rec {
+  # Make every child node default
+  mkDefaultRecursive = attrs:
+    mapAttrsRecursive (path: value: (mkDefault value)) attrs;
+
+  # Transpose the generated attrsets back to the format OpenCore required
+  transpose = attrs: mapAttrsToList (n: v: v) attrs;
+
   pathToName = path: (replaceStrings [ "/" ] [ "+" ] path);
 
   pathToRelative = level: path:
@@ -8,30 +16,46 @@ with builtins; rec {
       (lists.drop level (splitString "/" (toString path))));
 
   mkACPIRecursive = dir:
-    (flatten (mapAttrsToList (name: type:
+    listToAttrs (flatten (mapAttrsToList (name: type:
       let path = dir + "/${name}";
       in if type == "regular" then
-        if lib.hasSuffix ".aml" path then [{
-          Comment = name;
-          # default to false
-          Enabled = false;
-          Path = pathToRelative 7 path;
-        }] else
+        if lib.hasSuffix ".aml" path then
+          [
+            (nameValuePair name {
+              Comment = name;
+              # default to false
+              Enabled = false;
+              Path = pathToRelative 7 path;
+            })
+          ]
+        else
           [ ]
       else
         mkACPIRecursive path) (readDir dir)));
 
+  # Generated attrsets are of the form:
+  # {
+  #   "foo.aml" = {
+  #      Comment = "foo.aml";
+  #      Enabled = false;
+  #      Path = "foo.aml";
+  #   };
+  # }
   mkACPI = pkg: mkACPIRecursive "${pkg}/EFI/OC/ACPI";
 
   mkDriversRecursive = dir:
-    (flatten (mapAttrsToList (name: type:
+    listToAttrs (flatten (mapAttrsToList (name: type:
       let path = dir + "/${name}";
       in if type == "regular" then
-        if lib.hasSuffix ".efi" path then [{
-          Comment = name;
-          Enabled = false;
-          Path = pathToRelative 7 path;
-        }] else
+        if lib.hasSuffix ".efi" path then
+          [
+            (nameValuePair name {
+              Comment = name;
+              Enabled = false;
+              Path = pathToRelative 7 path;
+            })
+          ]
+        else
           [ ]
       else
         mkDriversRecursive path) (readDir dir)));
@@ -71,8 +95,11 @@ with builtins; rec {
         [ ]) (readDir dir)));
 
   mkKexts = pkg:
-    map (x: x.data) (oc.dag.topoSort
-      (builtins.listToAttrs (mkKextsRecursive "${pkg}/EFI/OC/Kexts"))).result;
+    listToAttrs (map (x: {
+      name = x.data.Comment;
+      value = x.data;
+    }) (oc.dag.topoSort
+      (builtins.listToAttrs (mkKextsRecursive "${pkg}/EFI/OC/Kexts"))).result);
 
   # nix requires us to do exact matching. Therefore, we need `.*` around the expressions we regularly would have write.
   parseKextIdentifier = path:
