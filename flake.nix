@@ -37,7 +37,7 @@
           modules = [
             ({ lib, pkgs, ... }: {
               oceanix.opencore = {
-                resources = [
+                resources.packages = [
                   pkgs.airportitlwm-latest-stable-big_sur
                   pkgs.applealc-latest-release
                   pkgs.brightnesskeys-latest-release

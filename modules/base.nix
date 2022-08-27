@@ -3,6 +3,7 @@ with lib;
 let
   cfg = config.oceanix;
   plistFile = oc.plist.toPlist { } cfg.opencore.transposedSettings;
+  resources = cfg.opencore.resources;
 in
 {
   options.oceanix = {
@@ -49,11 +50,20 @@ in
         description = "The OpenCore config written in Nix";
       };
 
-      resources = mkOption {
-        type = with types; listOf package;
-        default = [ ];
-        description =
-          "External resources like Kext, Drivers, ACPI files to copy into the final package.";
+      resources = {
+        packages = mkOption {
+          type = with types; listOf package;
+          default = [ ];
+          description =
+            "External resources like Kext, Drivers, ACPI files to copy into the final package.";
+        };
+
+        ACPIFolders = mkOption {
+          type = with types; listOf path;
+          default = [ ];
+          description =
+            "ACPI folders to be copied into the final package";
+        };
       };
     };
   };
@@ -82,17 +92,23 @@ in
           if (builtins.pathExists "${pkg}/Kexts") && (builtins.readDir "${pkg}/Kexts" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/Kexts/* $out/EFI/OC/Kexts/"
           else
-            "") cfg.opencore.resources)}
+            "") resources.packages)}
         ${concatStringsSep "\n" (lib.lists.map (pkg:
           if (builtins.pathExists "${pkg}/ACPI") && (builtins.readDir "${pkg}/ACPI" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/ACPI/* $out/EFI/OC/ACPI/"
           else
-            "") cfg.opencore.resources)}
+            "") resources.packages)}
         ${concatStringsSep "\n" (lib.lists.map (pkg:
           if (builtins.pathExists "${pkg}/Drivers") && (builtins.readDir "${pkg}/Drivers" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/Drivers/* $out/EFI/OC/Drivers/"
           else
-            "") cfg.opencore.resources)}
+            "") resources.packages)}
+
+        ${concatStringsSep "\n" (lib.lists.map (dir:
+          if (builtins.readDir dir) != {} then
+            "cp -r --no-preserve=ownership,mode ${dir}/* $out/EFI/OC/ACPI/"
+          else
+            "") resources.ACPIFolders)}
       '';
 
     oceanix.efiPackage = pkgs.runCommand "buildEfi" { } ''
