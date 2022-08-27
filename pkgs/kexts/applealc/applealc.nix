@@ -15,7 +15,6 @@ in stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out/Kexts
-    cp -r . $out/Kexts
-    rm -rf $out/Kexts/*.dSYM
+    cp -r ./*.kext $out/Kexts
   '';
 }

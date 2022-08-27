@@ -79,17 +79,17 @@ in
         cp -r --no-preserve=ownership,mode ${cfg.opencore.package}/${cfg.opencore.arch}/EFI $out
 
         ${concatStringsSep "\n" (lib.lists.map (pkg:
-          if builtins.pathExists "${pkg}/Kexts" then
+          if (builtins.pathExists "${pkg}/Kexts") && (builtins.readDir "${pkg}/Kexts" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/Kexts/* $out/EFI/OC/Kexts/"
           else
             "") cfg.opencore.resources)}
         ${concatStringsSep "\n" (lib.lists.map (pkg:
-          if builtins.pathExists "${pkg}/ACPI" then
+          if (builtins.pathExists "${pkg}/ACPI") && (builtins.readDir "${pkg}/ACPI" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/ACPI/* $out/EFI/OC/ACPI/"
           else
             "") cfg.opencore.resources)}
         ${concatStringsSep "\n" (lib.lists.map (pkg:
-          if builtins.pathExists "${pkg}/Drivers" then
+          if (builtins.pathExists "${pkg}/Drivers") && (builtins.readDir "${pkg}/Drivers" != {}) then
             "cp -r --no-preserve=ownership,mode ${pkg}/Drivers/* $out/EFI/OC/Drivers/"
           else
             "") cfg.opencore.resources)}

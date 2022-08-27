@@ -13,6 +13,6 @@ in stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out/Kexts
-    cp -r . $out/Kexts
+    cp -r ./*.kext $out/Kexts
   '';
 }
