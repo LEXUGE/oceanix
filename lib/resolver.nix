@@ -107,8 +107,10 @@ with builtins; rec {
                 };
               }))
             ] ++
-            # recursively descend for plugins, changing parent to the current kext
-            (mkKextsRecursive pkgs name path)
+            # recursively descend for plugins
+            # if we are at the top-level, then use our name as parent
+            # otherwise, pass down the top-level kext from which we are inherited
+            (mkKextsRecursive pkgs (if parent == null then name else parent) path)
           else
           # recursively descend, inheriting current parent
             mkKextsRecursive pkgs parent path
