@@ -1,9 +1,12 @@
-{ configuration, pkgs, lib ? pkgs.lib
+{ configuration
+, pkgs
+, lib ? pkgs.lib
 
   # Whether to check that each option has a matching declaration.
 , check ? true
   # Extra arguments passed to specialArgs.
-, extraSpecialArgs ? { } }:
+, extraSpecialArgs ? { }
+}:
 
 with lib;
 
@@ -24,18 +27,21 @@ let
     specialArgs = { modulesPath = builtins.toString ./.; } // extraSpecialArgs;
   };
 
-  module = let
-    failed = collectFailed rawModule.config;
-    failedStr = concatStringsSep "\n" (map (x: "- ${x}") failed);
-  in if failed == [ ] then
-    rawModule
-  else
-    throw ''
+  module =
+    let
+      failed = collectFailed rawModule.config;
+      failedStr = concatStringsSep "\n" (map (x: "- ${x}") failed);
+    in
+    if failed == [ ] then
+      rawModule
+    else
+      throw ''
 
       Failed assertions:
       ${failedStr}'';
 
-in {
+in
+{
   inherit (module) options config;
 
   efiPackage = module.config.oceanix.efiPackage;

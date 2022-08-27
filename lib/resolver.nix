@@ -6,7 +6,7 @@ with builtins; rec {
   mkDefaultRecursive = attrs:
     mapAttrsRecursive (path: value: (mkDefault value)) attrs;
 
-  # Transpose the generated attrsets back to the format OpenCore required
+  # Transpose the generated attrsets back to the format OpenCore required, use it ONLY on ACPI and Drivers
   transpose = attrs: mapAttrsToList (n: v: v) attrs;
 
   pathToName = path: (replaceStrings [ "/" ] [ "+" ] path);
@@ -16,22 +16,24 @@ with builtins; rec {
       (lists.drop level (splitString "/" (toString path))));
 
   mkACPIRecursive = dir:
-    listToAttrs (flatten (mapAttrsToList (name: type:
-      let path = dir + "/${name}";
-      in if type == "regular" then
-        if lib.hasSuffix ".aml" path then
-          [
-            (nameValuePair name {
-              Comment = name;
-              # default to false
-              Enabled = false;
-              Path = pathToRelative 7 path;
-            })
-          ]
+    listToAttrs (flatten (mapAttrsToList
+      (name: type:
+        let path = dir + "/${name}";
+        in if type == "regular" then
+          if lib.hasSuffix ".aml" path then
+            [
+              (nameValuePair name {
+                Comment = name;
+                # default to false
+                Enabled = false;
+                Path = pathToRelative 7 path;
+              })
+            ]
+          else
+            [ ]
         else
-          [ ]
-      else
-        mkACPIRecursive path) (readDir dir)));
+          mkACPIRecursive path)
+      (readDir dir)));
 
   # Generated attrsets are of the form:
   # {
@@ -44,92 +46,120 @@ with builtins; rec {
   mkACPI = pkg: mkACPIRecursive "${pkg}/EFI/OC/ACPI";
 
   mkDriversRecursive = dir:
-    listToAttrs (flatten (mapAttrsToList (name: type:
-      let path = dir + "/${name}";
-      in if type == "regular" then
-        if lib.hasSuffix ".efi" path then
-          [
-            (nameValuePair name {
-              Comment = name;
-              Enabled = false;
-              Path = pathToRelative 7 path;
-            })
-          ]
+    listToAttrs (flatten (mapAttrsToList
+      (name: type:
+        let path = dir + "/${name}";
+        in if type == "regular" then
+          if lib.hasSuffix ".efi" path then
+            [
+              (nameValuePair name {
+                Comment = name;
+                Enabled = false;
+                Path = pathToRelative 7 path;
+              })
+            ]
+          else
+            [ ]
         else
-          [ ]
-      else
-        mkDriversRecursive path) (readDir dir)));
+          mkDriversRecursive path)
+      (readDir dir)));
 
   mkDrivers = pkg: mkDriversRecursive "${pkg}/EFI/OC/Drivers";
 
-  mkKextsRecursive = dir:
-    (flatten (mapAttrsToList (name: type:
-      let
-        path = dir + "/${name}";
-        # if this is folder, try to see if it is a kext
-      in if (type == "directory") then
-        if hasSuffix ".kext" path then
-        # if it is a kext, we shall resolve dependency and add it to a list
-          let infoListPath = path + "/Contents/Info.plist";
-          in [
-            (nameValuePair (parseKextIdentifier infoListPath) (oc.dag.entryAfter
-              (trace
-                "${name} depends on [${toString (parseKextDeps infoListPath)}]"
-                (parseKextDeps infoListPath)) {
-                  Arch = "Any";
-                  Comment = name;
-                  Enabled = false;
-                  BundlePath = pathToRelative 7 path;
-                  ExecutablePath = "Contents/MacOS/"
-                    + (parseKextExecName infoListPath);
-                  PlistPath = "Contents/Info.plist";
-                }))
-          ] ++
-          # recursively descend for plugins
-          (mkKextsRecursive path)
+  # How to generate Kexts
+  # 1. Parse kexts using mkKexts: pkg -> attrset
+  # 2. Make it recursively default
+  # 3. Do recursive enable on plugins
+  # 4. Apply DAG ordering
+  # 5. Remove passthru
+
+  # parent: the name of the parent Kext, null if it is at the top level
+  # dir: current dir
+  mkKextsRecursive = pkgs: parent: dir:
+    (flatten (mapAttrsToList
+      (name: type:
+        let
+          path = dir + "/${name}";
+          # if this is folder, try to see if it is a kext
+        in
+        if (type == "directory") then
+          if hasSuffix ".kext" path then
+          # if it is a kext, we shall resolve dependency and add it to a list
+            let
+              infoListPath = path + "/Contents/Info.plist";
+              info = parsePlist pkgs infoListPath;
+            in
+            [
+              (nameValuePair name ({
+                Arch = "Any";
+                Comment = name;
+                Enabled = false;
+                BundlePath = pathToRelative 7 path;
+                ExecutablePath = "Contents/MacOS/"
+                + info.CFBundleExecutable or "";
+                PlistPath = "Contents/Info.plist";
+
+                # passthru should be removed later
+                passthru = {
+                  identifier = info.CFBundleIdentifier;
+                  parent = parent;
+                  depList = trace "${name} (${info.CFBundleIdentifier}) depends on [${toString (parseKextDeps info)}]" (parseKextDeps info);
+                };
+              }))
+            ] ++
+            # recursively descend for plugins, changing parent to the current kext
+            (mkKextsRecursive pkgs name path)
+          else
+          # recursively descend, inheriting current parent
+            mkKextsRecursive pkgs parent path
+        # if it is not a folder, we do nothing.
         else
-        # recursively descend
-          mkKextsRecursive path
-          # if it is not a folder, we do nothing.
-      else
-        [ ]) (readDir dir)));
+          [ ])
+      (readDir dir)));
 
-  mkKexts = pkg:
-    listToAttrs (map (x: {
-      name = x.data.Comment;
-      value = x.data;
-    }) (oc.dag.topoSort
-      (builtins.listToAttrs (mkKextsRecursive "${pkg}/EFI/OC/Kexts"))).result);
+  mkKexts = pkgs: pkg: listToAttrs (mkKextsRecursive pkgs null "${pkg}/EFI/OC/Kexts");
 
-  # nix requires us to do exact matching. Therefore, we need `.*` around the expressions we regularly would have write.
-  parseKextIdentifier = path:
-    head (match ''
-      .*<key>CFBundleIdentifier</key>[
-      	]*<string>([.a-zA-Z0-9]*)</string>.*'' (readFile path));
+  # recursively enable plugins before transpose
+  enablePluginsRecursive = attrs:
+    mapAttrs
+      (name: value: {
+        inherit (value) Arch Comment BundlePath ExecutablePath PlistPath passthru;
+        Enabled =
+          if value.passthru.parent == null then
+            value.Enabled
+          else
+            attrs."${value.passthru.parent}".Enabled;
+      })
+      attrs;
 
-  parseKextExecName = path:
-    head (match ''
-      .*<key>CFBundleExecutable</key>[
-      	]*<string>([.a-zA-Z0-9]*)</string>.*'' (readFile path));
+  orderKexts = attrs:
+    map (x: x.data)
+      (oc.dag.topoSort
+        (mapAttrs (name: value: oc.dag.entryAfter value.passthru.depList value)
+          (mapAttrs'
+            (name: value: nameValuePair (value.passthru.identifier) value)
+            attrs))).result;
 
-  # FIXME: We cannot make it lazy.
-  getKextDepsSection = path:
-    let
-      fallback = (match ''
-        .*<key>OSBundleLibraries</key>[
-        	]*<dict>(.*?)</dict>.*'' (readFile path));
-      preferred = (match ''
-        .*<key>OSBundleLibraries</key>[
-        	]*<dict>(.*?)</dict>[
-        	]*<key>OSBundleRequired</key>.*'' (readFile path));
-    in head (if preferred != null then preferred else fallback);
+  removePassthru = list:
+    map
+      (value: {
+        inherit (value) Arch Comment BundlePath ExecutablePath PlistPath Enabled;
+      })
+      list;
 
-  parseKextDeps = path:
-    flatten (map (line: parseKextDeps' line)
-      (strings.splitString "\n" (getKextDepsSection path)));
+  # used by end-user
+  finalizeKexts = autoEnablePlugins: attrs:
+    removePassthru (orderKexts
+      (if autoEnablePlugins then enablePluginsRecursive attrs else attrs));
 
-  # Luckily this doesn't match <key>OSBundleLibraries_x86_64</key>
-  parseKextDeps' = line:
-    let result = (match ".*<key>([.a-zA-Z0-9]+)</key>.*" line);
-    in if result == null then [ ] else result;
+  parseKextDeps = attrs: mapAttrsToList (name: value: name) attrs.OSBundleLibraries or { };
+
+  parsePlist' = pkgs: path: pkgs.runCommand "parsePlist_${pathToRelative 7 path}" { nativeBuildInputs = [ pkgs.libplist ]; } ''
+    mkdir $out
+    cp "${path}" ./plist.in
+    substituteInPlace ./plist.in --replace "<data>" "<string>" --replace "</data>" "</string>" --replace "<date>" "<string>" --replace "</date>" "<string>"
+    plistutil -i ./plist.in -o $out/plist.out -f json
+  '';
+
+  parsePlist = pkgs: plist: fromJSON (readFile "${parsePlist' pkgs plist}/plist.out");
 }

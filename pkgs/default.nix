@@ -11,5 +11,7 @@ let
           else
             listPackageRecursive path
         else
-          { }) (builtins.readDir dir)));
-in listPackageRecursive ./.
+          { })
+      (builtins.readDir dir)));
+in
+listPackageRecursive ./.

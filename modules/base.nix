@@ -3,7 +3,8 @@ with lib;
 let
   cfg = config.oceanix;
   plistFile = oc.plist.toPlist { } cfg.opencore.transposedSettings;
-in {
+in
+{
   options.oceanix = {
     efiPackage = mkOption {
       internal = true;
@@ -22,6 +23,13 @@ in {
         type = types.enum [ "IA32" "X64" ];
         default = "X64";
         description = "The architecture to install OpenCore with";
+      };
+
+      autoEnablePlugins = mkOption {
+        type = types.bool;
+        default = true;
+        description =
+          "Whether to automatically enable plugins of one kexts if which gets enabled";
       };
 
       package = mkOption {
@@ -54,11 +62,12 @@ in {
     oceanix.opencore.settings = with oc.resolver; {
       ACPI.Add = mkDefaultRecursive (mkACPI cfg.efiIntermediatePackage);
       UEFI.Drivers = mkDefaultRecursive (mkDrivers cfg.efiIntermediatePackage);
-      Kernel.Add = mkDefaultRecursive (mkKexts cfg.efiIntermediatePackage);
+      Kernel.Add = mkDefaultRecursive (mkKexts pkgs cfg.efiIntermediatePackage);
     };
 
     oceanix.opencore.transposedSettings = with oc.resolver; {
-      Kernel.Add = transpose cfg.opencore.settings.Kernel.Add;
+      Kernel.Add = finalizeKexts cfg.opencore.autoEnablePlugins
+        cfg.opencore.settings.Kernel.Add;
       UEFI.Drivers = transpose cfg.opencore.settings.UEFI.Drivers;
       ACPI.Add = transpose cfg.opencore.settings.ACPI.Add;
     };

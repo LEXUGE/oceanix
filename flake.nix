@@ -8,8 +8,13 @@
     rec {
       lib = {
         oc = (import ./lib/stdlib-extended.nix nixpkgs.lib).oc;
-        OpenCoreConfig = { modules ? [ ], pkgs, lib ? pkgs.lib
-          , extraSpecialArgs ? { }, check ? true }@args:
+        OpenCoreConfig =
+          { modules ? [ ]
+          , pkgs
+          , lib ? pkgs.lib
+          , extraSpecialArgs ? { }
+          , check ? true
+          }@args:
           (import ./modules {
             inherit pkgs lib check extraSpecialArgs;
             configuration = { ... }: { imports = modules; };
@@ -32,11 +37,18 @@
           modules = [
             ({ lib, pkgs, ... }: {
               oceanix.opencore = {
-                settings = { Kernel.Add."Lilu.kext".Enabled = true; };
                 resources = [
+                  pkgs.airportitlwm-latest-stable-big_sur
+                  pkgs.applealc-latest-release
+                  pkgs.brightnesskeys-latest-release
+                  pkgs.ecenabler-latest-release
+                  pkgs.intel-bluetooth-firmware-latest
+                  pkgs.nvmefix-latest-release
+                  pkgs.virtualsmc-latest-release
                   pkgs.whatevergreen-latest-release
                   pkgs.lilu-latest-release
                   pkgs.voodooi2c-latest
+                  pkgs.voodoops2controller-latest-release
                   pkgs.intel-mausi-latest-release
                 ];
               };
@@ -48,5 +60,24 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         lib = nixpkgs.lib;
-      in { packages = (import ./pkgs { inherit lib pkgs; }); });
+      in
+      {
+        packages = (import ./pkgs { inherit lib pkgs; });
+        apps.fmt = utils.lib.mkApp {
+          drv = with import nixpkgs { inherit system; };
+            pkgs.writeShellScriptBin "oceanix-fmt" ''
+              export PATH=${
+                pkgs.lib.strings.makeBinPath [
+                  findutils
+                  nixpkgs-fmt
+                  shfmt
+                  shellcheck
+                ]
+              }
+              find . -type f -name '*.sh' -exec shellcheck {} +
+              find . -type f -name '*.sh' -exec shfmt -w {} +
+              find . -type f -name '*.nix' -exec nixpkgs-fmt {} +
+            '';
+        };
+      });
 }

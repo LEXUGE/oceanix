@@ -77,15 +77,18 @@ in {
     let
       dagBefore = dag: name:
         builtins.attrNames
-        (filterAttrs (n: v: builtins.elem name v.before) dag);
-      normalizedDag = mapAttrs (n: v: {
-        name = n;
-        data = v.data;
-        after = v.after ++ dagBefore dag n;
-      }) dag;
+          (filterAttrs (n: v: builtins.elem name v.before) dag);
+      normalizedDag = mapAttrs
+        (n: v: {
+          name = n;
+          data = v.data;
+          after = v.after ++ dagBefore dag n;
+        })
+        dag;
       before = a: b: builtins.elem a.name b.after;
       sorted = toposort before (builtins.attrValues normalizedDag);
-    in if sorted ? result then {
+    in
+    if sorted ? result then {
       result = map (v: { inherit (v) name data; }) sorted.result;
     } else
       sorted;

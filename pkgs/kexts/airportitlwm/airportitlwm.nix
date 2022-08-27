@@ -1,7 +1,7 @@
 { lib, stdenv, fetchzip, ver ? "latest", osVer }:
 let versionList = (import ./version.nix { inherit lib; });
 in stdenv.mkDerivation rec {
-  pname = "intel-bluetooth-firmware";
+  pname = "airportitlwm";
   version = versionList."${ver}".canonicalVersion;
 
   src = fetchzip {
@@ -13,6 +13,7 @@ in stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out/Kexts
+    cd */
     cp -r . $out/Kexts
   '';
 }

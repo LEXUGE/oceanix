@@ -1,11 +1,12 @@
 # All modules that need to be evaluated
 { pkgs
 
-# Note, this should be "the standard library" + HM extensions.
+  # Note, this should be "the standard library" + HM extensions.
 , lib
 
-# Whether to enable module type checking.
-, check ? true }:
+  # Whether to enable module type checking.
+, check ? true
+}:
 
 with lib;
 
@@ -21,4 +22,5 @@ let
     }
   ];
 
-in modules
+in
+modules
