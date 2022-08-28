@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs, utils, ... }:
+  outputs = { self, nixpkgs, utils, ... }: with utils.lib;
     rec {
       lib = {
         oc = (import ./lib/stdlib-extended.nix nixpkgs.lib).oc;
@@ -30,7 +30,7 @@
       tests = {
         buildExampleEfi = (lib.OpenCoreConfig {
           pkgs = import nixpkgs {
-            system = "x86_64-linux";
+            system = system.x86_64-linux;
             overlays = [ overlays.default ];
           };
 
@@ -56,7 +56,7 @@
           ];
         }).efiPackage;
       };
-    } // utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    } // eachSystem [ system.i686-linux system.x86_64-linux system.x86_64-darwin ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         lib = nixpkgs.lib;
