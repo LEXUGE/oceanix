@@ -184,47 +184,45 @@ in
       # These sections are good-defaults from Sample.plist
       # NOTE: their data type should not be Data or Date as those types are lost during parsing.
       # If it happens that some are of data or date type, we shall manually patch them up.
-      oceanix.opencore.settings = with oc.resolver; let update = old: oc.plist.mkData old; in mkIf cfg.opencore.useSampleAsDefault {
-        ACPI.Quirks = mkDefaultRecursive sampleConfig.ACPI.Quirks;
-        Booter.Quirks = mkDefaultRecursive sampleConfig.Booter.Quirks;
+      oceanix.opencore.settings = with oc.resolver; let update = old: oc.plist.mkData old; in mkIf cfg.opencore.useSampleAsDefault (mkDefaultRecursive {
+        ACPI.Quirks = sampleConfig.ACPI.Quirks;
+        Booter.Quirks = sampleConfig.Booter.Quirks;
         Kernel = {
-          Quirks = mkDefaultRecursive sampleConfig.Kernel.Quirks;
-          Scheme = mkDefaultRecursive sampleConfig.Kernel.Scheme;
+          inherit (sampleConfig.Kernel) Quirks Scheme;
+          Emulate = updateManyAttrsByPath [
+            { path = [ "Cpuid1Data" ]; inherit update; }
+            { path = [ "Cpuid1Mask" ]; inherit update; }
+          ]
+            sampleConfig.Kernel.Emulate;
         };
         Misc = {
-          BlessOverride = mkDefault sampleConfig.Misc.BlessOverride;
-          Boot = mkDefaultRecursive sampleConfig.Misc.Boot;
-          Debug = mkDefaultRecursive sampleConfig.Misc.Debug;
-          Security = mkDefaultRecursive (updateManyAttrsByPath [
+          inherit (sampleConfig.Misc) BlessOverride Boot Debug Serial;
+          Security = updateManyAttrsByPath [
             { path = [ "PasswordHash" ]; inherit update; }
             { path = [ "PasswordSalt" ]; inherit update; }
           ]
-            sampleConfig.Misc.Security);
-          Serial = mkDefaultRecursive sampleConfig.Misc.Serial;
+            sampleConfig.Misc.Security;
         };
         NVRAM = {
-          Add = mkDefaultRecursive (updateManyAttrsByPath [
+          inherit (sampleConfig.NVRAM) Delete LegacyOverwrite LegacySchema WriteFlash;
+          Add = updateManyAttrsByPath [
             { path = [ "4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14" "DefaultBackgroundColor" ]; inherit update; }
             { path = [ "4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102" "rtc-blacklist" ]; inherit update; }
             { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "SystemAudioVolume" ]; inherit update; }
             { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "csr-active-config" ]; inherit update; }
+            { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "prev-lang:kbd" ]; inherit update; }
           ]
-            sampleConfig.NVRAM.Add);
-          Delete = mkDefaultRecursive sampleConfig.NVRAM.Delete;
-          LegacyOverwrite = mkDefault sampleConfig.NVRAM.LegacyOverwrite;
-          LegacySchema = mkDefaultRecursive sampleConfig.NVRAM.LegacySchema;
-          WriteFlash = mkDefault sampleConfig.NVRAM.WriteFlash;
+            sampleConfig.NVRAM.Add;
+        };
+        PlatformInfo = {
+          inherit (sampleConfig.PlatformInfo) Automatic CustomMemory UpdateDataHub UpdateNVRAM UpdateSMBIOS UpdateSMBIOSMode UseRawUuidEncoding;
+          Generic = {
+            inherit (sampleConfig.PlatformInfo.Generic) AdviseFeatures MaxBIOSVersion ProcessorType SpoofVendor SystemMemoryStatus;
+          };
         };
         UEFI = {
-          APFS = mkDefaultRecursive sampleConfig.UEFI.APFS;
-          AppleInput = mkDefaultRecursive sampleConfig.UEFI.AppleInput;
-          Audio = mkDefaultRecursive sampleConfig.UEFI.Audio;
-          ConnectDrivers = mkDefault sampleConfig.UEFI.ConnectDrivers;
-          Input = mkDefaultRecursive sampleConfig.UEFI.Input;
-          Output = mkDefaultRecursive sampleConfig.UEFI.Output;
-          ProtocolOverrides = mkDefaultRecursive sampleConfig.UEFI.ProtocolOverrides;
-          Quirks = mkDefaultRecursive sampleConfig.UEFI.Quirks;
+          inherit (sampleConfig.UEFI) APFS AppleInput Audio ConnectDrivers Input Output ProtocolOverrides Quirks;
         };
-      };
+      });
     }];
 }
