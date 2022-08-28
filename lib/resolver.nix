@@ -184,10 +184,11 @@ with builtins; rec {
 
   parseKextDeps = attrs: mapAttrsToList (name: value: name) attrs.OSBundleLibraries or { };
 
+  # We replace "\" with "/" because it often causes JSON parsing error on places we don't care like Patch or Add in Sample.plist
   parsePlist' = pkgs: path: pkgs.runCommand "parsePlist_${pathToRelative 7 path}" { allowSubstitutes = false; nativeBuildInputs = [ pkgs.libplist ]; } ''
     mkdir $out
     cp "${path}" ./plist.in
-    substituteInPlace ./plist.in --replace "<data>" "<string>" --replace "</data>" "</string>" --replace "<date>" "<string>" --replace "</date>" "<string>"
+    substituteInPlace ./plist.in --replace "<data>" "<string>" --replace "</data>" "</string>" --replace "<date>" "<string>" --replace "</date>" "<string>" --replace "\\" "/"
     plistutil -i ./plist.in -o $out/plist.out -f json
   '';
 
