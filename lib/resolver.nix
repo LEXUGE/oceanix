@@ -55,6 +55,7 @@ with builtins; rec {
               (nameValuePair name {
                 Arguments = "";
                 Auxiliary = true;
+                Flavour = "Auto";
                 Name = name;
                 Comment = name;
                 Enabled = false;
@@ -79,6 +80,8 @@ with builtins; rec {
           if lib.hasSuffix ".efi" path then
             [
               (nameValuePair name {
+                Arguments = "";
+                LoadEarly = false;
                 Comment = name;
                 Enabled = false;
                 Path = pathToRelative 7 path;
@@ -124,6 +127,9 @@ with builtins; rec {
                 ExecutablePath = "Contents/MacOS/"
                 + info.CFBundleExecutable or "";
                 PlistPath = "Contents/Info.plist";
+                # TODO: Complete kernel version requirements automatically?
+                MinKernel = "";
+                MaxKernel = "";
 
                 # passthru should be removed later
                 passthru = {
@@ -172,9 +178,12 @@ with builtins; rec {
 
   removePassthru = list:
     map
-      (value: {
-        inherit (value) Arch Comment BundlePath ExecutablePath PlistPath Enabled;
-      })
+      (value: updateManyAttrsByPath
+        [{
+          path = [ "passthru" ];
+          update = old: null;
+        }]
+        value)
       list;
 
   # used by end-user

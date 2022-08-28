@@ -210,7 +210,8 @@ in
             { path = [ "4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102" "rtc-blacklist" ]; inherit update; }
             { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "SystemAudioVolume" ]; inherit update; }
             { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "csr-active-config" ]; inherit update; }
-            { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "prev-lang:kbd" ]; inherit update; }
+            # Often users set this option to string type, we shall leave it as the string type to avoid type conflict.
+            # { path = [ "7C436110-AB2A-4BBB-A880-FE41995C9F82" "prev-lang:kbd" ]; inherit update; }
           ]
             sampleConfig.NVRAM.Add;
         };
@@ -222,6 +223,7 @@ in
         };
         UEFI = {
           inherit (sampleConfig.UEFI) APFS AppleInput Audio ConnectDrivers Input Output ProtocolOverrides Quirks;
+          ReservedMemory = [ ];
         };
       });
     }];
