@@ -63,21 +63,24 @@
       in
       {
         packages = (import ./pkgs { inherit lib pkgs; });
-        apps.fmt = utils.lib.mkApp {
-          drv = with import nixpkgs { inherit system; };
-            pkgs.writeShellScriptBin "oceanix-fmt" ''
-              export PATH=${
-                pkgs.lib.strings.makeBinPath [
-                  findutils
-                  nixpkgs-fmt
-                  shfmt
-                  shellcheck
-                ]
-              }
-              find . -type f -name '*.sh' -exec shellcheck {} +
-              find . -type f -name '*.sh' -exec shfmt -w {} +
-              find . -type f -name '*.nix' -exec nixpkgs-fmt {} +
-            '';
+        apps = rec {
+          fmt = utils.lib.mkApp {
+            drv = with import nixpkgs { inherit system; };
+              pkgs.writeShellScriptBin "oceanix-fmt" ''
+                export PATH=${
+                  pkgs.lib.strings.makeBinPath [
+                    findutils
+                    nixpkgs-fmt
+                    shfmt
+                    shellcheck
+                  ]
+                }
+                find . -type f -name '*.sh' -exec shellcheck {} +
+                find . -type f -name '*.sh' -exec shfmt -w {} +
+                find . -type f -name '*.nix' -exec nixpkgs-fmt {} +
+              '';
+          };
+          default = fmt;
         };
       });
 }

@@ -45,6 +45,32 @@ with builtins; rec {
   # }
   mkACPI = pkg: mkACPIRecursive "${pkg}/EFI/OC/ACPI";
 
+  mkToolsRecursive = dir:
+    listToAttrs (flatten (mapAttrsToList
+      (name: type:
+        let path = dir + "/${name}";
+        in if type == "regular" then
+          if lib.hasSuffix ".efi" path then
+            [
+              (nameValuePair name {
+                Arguments = "";
+                Auxiliary = true;
+                Name = name;
+                Comment = name;
+                Enabled = false;
+                Path = pathToRelative 7 path;
+                RealPath = false;
+                TextMode = false;
+              })
+            ]
+          else
+            [ ]
+        else
+          mkToolsRecursive path)
+      (readDir dir)));
+
+  mkTools = pkg: mkToolsRecursive "${pkg}/EFI/OC/Tools";
+
   mkDriversRecursive = dir:
     listToAttrs (flatten (mapAttrsToList
       (name: type:
@@ -158,7 +184,7 @@ with builtins; rec {
 
   parseKextDeps = attrs: mapAttrsToList (name: value: name) attrs.OSBundleLibraries or { };
 
-  parsePlist' = pkgs: path: pkgs.runCommand "parsePlist_${pathToRelative 7 path}" { nativeBuildInputs = [ pkgs.libplist ]; } ''
+  parsePlist' = pkgs: path: pkgs.runCommand "parsePlist_${pathToRelative 7 path}" { allowSubstitutes = false; nativeBuildInputs = [ pkgs.libplist ]; } ''
     mkdir $out
     cp "${path}" ./plist.in
     substituteInPlace ./plist.in --replace "<data>" "<string>" --replace "</data>" "</string>" --replace "<date>" "<string>" --replace "</date>" "<string>"
