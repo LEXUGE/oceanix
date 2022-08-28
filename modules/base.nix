@@ -75,12 +75,20 @@ in
       Kernel.Add = mkDefaultRecursive (mkKexts pkgs cfg.efiIntermediatePackage);
     };
 
-    oceanix.opencore.transposedSettings = with oc.resolver; {
-      Kernel.Add = finalizeKexts cfg.opencore.autoEnablePlugins
-        cfg.opencore.settings.Kernel.Add;
-      UEFI.Drivers = transpose cfg.opencore.settings.UEFI.Drivers;
-      ACPI.Add = transpose cfg.opencore.settings.ACPI.Add;
-    };
+    # BUG: this should inherit settings
+    oceanix.opencore.transposedSettings = with oc.resolver; updateManyAttrsByPath
+      [
+        {
+          path = [ "Kernel" "Add" ];
+          update = old: finalizeKexts cfg.opencore.autoEnablePlugins old;
+        }
+        { path = [ "UEFI" "Drivers" ]; update = old: transpose old; }
+        {
+          path = [ "ACPI" "Add" ];
+          update = old: transpose old;
+        }
+      ]
+      cfg.opencore.settings;
 
     oceanix.efiIntermediatePackage =
       pkgs.runCommand "buildEfiIntermediate" { } ''

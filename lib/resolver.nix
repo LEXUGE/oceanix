@@ -124,14 +124,16 @@ with builtins; rec {
   # recursively enable plugins before transpose
   enablePluginsRecursive = attrs:
     mapAttrs
-      (name: value: {
-        inherit (value) Arch Comment BundlePath ExecutablePath PlistPath passthru;
-        Enabled =
-          if value.passthru.parent == null then
-            value.Enabled
-          else
-            attrs."${value.passthru.parent}".Enabled;
-      })
+      (name: value: updateManyAttrsByPath
+        [{
+          path = [ "Enabled" ];
+          update = old:
+            if value.passthru.parent == null then
+              old
+            else
+              attrs."${value.passthru.parent}".Enabled;
+        }]
+        value)
       attrs;
 
   orderKexts = attrs:
