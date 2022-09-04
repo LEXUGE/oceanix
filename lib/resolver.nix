@@ -124,8 +124,7 @@ with builtins; rec {
                 Comment = name;
                 Enabled = false;
                 BundlePath = pathToRelative 7 path;
-                ExecutablePath = "Contents/MacOS/"
-                + info.CFBundleExecutable or "";
+                ExecutablePath = if info.CFBundleExecutable or null == null then "" else ("Contents/MacOS/" + info.CFBundleExecutable);
                 PlistPath = "Contents/Info.plist";
                 # TODO: Complete kernel version requirements automatically?
                 MinKernel = "";
