@@ -1,6 +1,12 @@
 # Upstream: https://github.com/acidanthera/VoodooPS2Controller/releases/
 { lib }: rec {
-  latest = v2_2_9;
+  latest = v2_3_0;
+
+  v2_3_0 = {
+    canonicalVersion = "2.3.0";
+    debug = "sha256-FdgKSmgZGJ6HmiFmjjIoJvQjWio2gT6Iwn0VEO/7q9E=";
+    release = "sha256-tozaVAGknakb6azYcke9nr39DzX0z7E86HfqNOmi3gA=";
+  };
 
   v2_2_9 = {
     canonicalVersion = "2.2.9";

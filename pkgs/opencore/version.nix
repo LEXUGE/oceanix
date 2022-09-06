@@ -1,6 +1,12 @@
 { lib }: rec {
   # Change this whenever the new version releases
-  latest = v0_8_3;
+  latest = v0_8_4;
+
+  v0_8_4 = {
+    canonicalVersion = "0.8.4";
+    release = "sha256-XA/HtgyFkemnFDC5qMyp7JBu90gZz2Bsz8zK5COO7Uo=";
+    debug = "sha256-nia87MOTQ34f7oZimfsnn9MPp3NQ0RhuwDNrTqEky6U=";
+  };
 
   v0_8_3 = {
     canonicalVersion = "0.8.3";
