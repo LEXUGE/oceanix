@@ -26,36 +26,6 @@
           inherit (prev) lib;
           pkgs = prev;
         });
-
-      tests = {
-        buildExampleEfi = (lib.OpenCoreConfig {
-          pkgs = import nixpkgs {
-            system = system.x86_64-linux;
-            overlays = [ overlays.default ];
-          };
-
-          modules = [
-            ({ lib, pkgs, ... }: {
-              oceanix.opencore = {
-                resources.packages = [
-                  pkgs.airportitlwm-latest-stable-big_sur
-                  pkgs.applealc-latest-release
-                  pkgs.brightnesskeys-latest-release
-                  pkgs.ecenabler-latest-release
-                  pkgs.intel-bluetooth-firmware-latest
-                  pkgs.nvmefix-latest-release
-                  pkgs.virtualsmc-latest-release
-                  pkgs.whatevergreen-latest-release
-                  pkgs.lilu-latest-release
-                  pkgs.voodooi2c-latest
-                  pkgs.voodoops2controller-latest-release
-                  pkgs.intel-mausi-latest-release
-                ];
-              };
-            })
-          ];
-        }).efiPackage;
-      };
     } // eachSystem [ system.i686-linux system.x86_64-linux system.x86_64-darwin ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -63,6 +33,7 @@
       in
       {
         packages = (import ./pkgs { inherit lib pkgs; });
+
         apps = rec {
           fmt = utils.lib.mkApp {
             drv = with import nixpkgs { inherit system; };
@@ -81,6 +52,36 @@
               '';
           };
           default = fmt;
+        };
+
+        checks = {
+          buildExampleEfi = (self.lib.OpenCoreConfig {
+            pkgs = import nixpkgs {
+              inherit system;
+              overlays = [ self.overlays.default ];
+            };
+
+            modules = [
+              ({ lib, pkgs, ... }: {
+                oceanix.opencore = {
+                  resources.packages = [
+                    pkgs.airportitlwm-latest-stable-big_sur
+                    pkgs.applealc-latest-release
+                    pkgs.brightnesskeys-latest-release
+                    pkgs.ecenabler-latest-release
+                    pkgs.intel-bluetooth-firmware-latest
+                    pkgs.nvmefix-latest-release
+                    pkgs.virtualsmc-latest-release
+                    pkgs.whatevergreen-latest-release
+                    pkgs.lilu-latest-release
+                    pkgs.voodooi2c-latest
+                    pkgs.voodoops2controller-latest-release
+                    pkgs.intel-mausi-latest-release
+                  ];
+                };
+              })
+            ];
+          }).efiPackage;
         };
       });
 }
