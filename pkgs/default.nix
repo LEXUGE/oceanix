@@ -2,7 +2,7 @@
 let
   listPackageRecursive = with builtins;
     dir:
-    (lib.attrsets.foldAttrs (n: col: col // n) { } (lib.attrsets.mapAttrsToList
+    (lib.lists.foldr (n: col: col // n) { } (lib.attrsets.mapAttrsToList
       (name: type:
         let path = dir + "/${name}";
         in if type == "directory" then
