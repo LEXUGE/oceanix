@@ -6,7 +6,7 @@ in stdenv.mkDerivation rec {
 
   src = fetchzip {
     url =
-      "https://github.com/acidanthera/VoodooPS2/releases/download/${if version == "2.3.0" then "v2.3.0" else version}/VoodooPS2Controller-${version}-${
+      "https://github.com/acidanthera/VoodooPS2/releases/download/${if (builtins.compareVersions version "2.3.0") != 0 then ("v" + version) else version}/VoodooPS2Controller-${version}-${
         if release then "RELEASE" else "DEBUG"
       }.zip";
     sha256 = versionList."${ver}"."${if release then "release" else "debug"}";

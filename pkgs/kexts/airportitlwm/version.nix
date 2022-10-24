@@ -1,4 +1,4 @@
-# Upstream: https://github.com/OpenIntelWireless/AirportItlwm/releases/
+# Upstream: https://github.com/OpenIntelWireless/itlwm/releases
 
 { lib }: rec {
   latest = v2_1_0;
