@@ -6,7 +6,8 @@ in stdenv.mkDerivation rec {
 
   src = fetchzip {
     url =
-      "https://github.com/OpenIntelWireless/itlwm/releases/download/${version}/AirportItlwm_${version}_stable_${osVer}.kext.zip";
+      # Hacky work around
+      if (builtins.compareVersions version "v2.1.0") != 1 then "https://github.com/OpenIntelWireless/itlwm/releases/download/${version}/AirportItlwm_${version}_stable_${osVer}.kext.zip" else "https://github.com/OpenIntelWireless/itlwm/releases/download/${version}-alpha/AirportItlwm-${osVer}-${version}-DEBUG-alpha-ee56708.zip";
     sha256 = versionList."${ver}"."${osVer}";
     stripRoot = false;
   };

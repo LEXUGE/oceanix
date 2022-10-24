@@ -65,7 +65,7 @@
               ({ lib, pkgs, ... }: {
                 oceanix.opencore = {
                   resources.packages = [
-                    pkgs.airportitlwm-latest-stable-big_sur
+                    pkgs.airportitlwm-latest-ventura
                     pkgs.applealc-latest-release
                     pkgs.brightnesskeys-latest-release
                     pkgs.ecenabler-latest-release

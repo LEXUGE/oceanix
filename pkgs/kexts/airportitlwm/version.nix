@@ -1,7 +1,15 @@
 # Upstream: https://github.com/OpenIntelWireless/itlwm/releases
 
 { lib }: rec {
-  latest = v2_1_0;
+  latest = v2_2_0;
+
+  v2_2_0 = {
+    canonicalVersion = "v2.2.0";
+    # Big_Sur = lib.fakeSha256;
+    Catalina = "sha256-ffz0g7a5J09Iuxi7vbyGyeuj9Ykx8hSym+w0Xt2e8wo=";
+    Monterey = "sha256-xEfMfU3r4RSRikEuq8SjdF4fVbtpNlnbYfvW6OAn0nk=";
+    Ventura = "sha256-Dckhcqx/aKc2eVcXV+cQMmrbHkX5S5GlmoQ8y7iGx6M=";
+  };
 
   v2_1_0 = {
     canonicalVersion = "v2.1.0";

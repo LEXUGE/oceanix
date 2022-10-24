@@ -3,19 +3,23 @@ import ../../pkger.nix {
   inherit lib pkgs;
   path = ./.;
   fn = ver: {
-    "airportitlwm-${ver}-stable-big_sur" = pkgs.callPackage ./airportitlwm.nix {
+    "airportitlwm-${ver}-big_sur" = pkgs.callPackage ./airportitlwm.nix {
       inherit ver;
       osVer = "BigSur";
     };
-    "airportitlwm-${ver}-stable-catalina" =
+    "airportitlwm-${ver}-catalina" =
       pkgs.callPackage ./airportitlwm.nix {
         inherit ver;
         osVer = "Catalina";
       };
-    "airportitlwm-${ver}-stable-monterey" =
+    "airportitlwm-${ver}-monterey" =
       pkgs.callPackage ./airportitlwm.nix {
         inherit ver;
         osVer = "Monterey";
       };
+    "airportitlwm-${ver}-ventura" = pkgs.callPackage ./airportitlwm.nix {
+      inherit ver;
+      osVer = "Ventura";
+    };
   };
 }
