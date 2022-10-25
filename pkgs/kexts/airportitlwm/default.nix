@@ -17,9 +17,11 @@ import ../../pkger.nix {
         inherit ver;
         osVer = "Monterey";
       };
-    "airportitlwm-${ver}-ventura" = pkgs.callPackage ./airportitlwm.nix {
-      inherit ver;
-      osVer = "Ventura";
-    };
-  };
+  } // (if ver != "v2_1_0" then {
+    "airportitlwm-${ver}-ventura" = pkgs.callPackage ./airportitlwm.nix
+      {
+        inherit ver;
+        osVer = "Ventura";
+      };
+  } else { });
 }

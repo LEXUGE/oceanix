@@ -66,6 +66,7 @@
                 oceanix.opencore = {
                   resources.packages = [
                     pkgs.airportitlwm-latest-ventura
+                    pkgs.itlwm-latest
                     pkgs.applealc-latest-release
                     pkgs.brightnesskeys-latest-release
                     pkgs.ecenabler-latest-release
