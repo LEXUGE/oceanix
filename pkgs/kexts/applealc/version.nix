@@ -1,6 +1,12 @@
 # Upstream: https://github.com/acidanthera/AppleALC/releases/
 { lib }: rec {
-  latest = v1_7_5;
+  latest = v1_7_6;
+
+  v1_7_6 = {
+    canonicalVersion = "1.7.6";
+    debug = "sha256-Y7LcXSs+6aK3X8bpAxitNB+W5tJBg98OYHhGDBQ+jJ8=";
+    release = "sha256-jptzcfXoWAg5OD2WpQsU6KgUpxCPbtcHkNOIxBUFzHI=";
+  };
 
   v1_7_5 = {
     canonicalVersion = "1.7.5";
