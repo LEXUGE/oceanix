@@ -2,26 +2,16 @@
 import ../../pkger.nix {
   inherit lib pkgs;
   path = ./.;
-  fn = ver: {
-    "airportitlwm-${ver}-big_sur" = pkgs.callPackage ./airportitlwm.nix {
-      inherit ver;
-      osVer = "BigSur";
-    };
-    "airportitlwm-${ver}-catalina" =
-      pkgs.callPackage ./airportitlwm.nix {
-        inherit ver;
-        osVer = "Catalina";
+  fn = ver:
+    let
+      verInfo = import ./version.nix {
+        inherit lib;
       };
-    "airportitlwm-${ver}-monterey" =
-      pkgs.callPackage ./airportitlwm.nix {
+    in
+    builtins.listToAttrs (map
+      (x: lib.attrsets.nameValuePair "airportitlwm-${ver}-${lib.strings.toLower x}" (pkgs.callPackage ./airportitlwm.nix {
         inherit ver;
-        osVer = "Monterey";
-      };
-  } // (if ver != "v2_1_0" then {
-    "airportitlwm-${ver}-ventura" = pkgs.callPackage ./airportitlwm.nix
-      {
-        inherit ver;
-        osVer = "Ventura";
-      };
-  } else { });
+        osVer = x;
+      }))
+      verInfo."${ver}".supportedOS);
 }
